@@ -1,42 +1,77 @@
 ---
-title: "R Notebook"
+title: "Returns for Stocks and Bonds under each Residential Party"
 output: html_notebook
 ---
 
+This is a simple code for showing how stocks and bonds do when the presidential party is  Democratic or Republican. 
+
+This code is 3 chunks:
+1) Libraries
+2) Read data
+3) Plot! 
+
+Chunks 2 and 3 are each one call. You can execute by using `ctrl + shift + enter` after clicking inside the plot. Run the entire file by using `ctrl + alt + r`. You will most likely need to install packages for the first chunk. 
+
+Please recall that correlation != causation :)
+
+### 1) Libraries
 ```{r, message = FALSE, warning = FALSE}
-library(readxl)
-library(tidyverse)
-library(here)
-library(scales)
+# The usuals
+library(readxl)     # for reading the ecxel file
+library(tidyverse)  # all inclusive
+library(here)       # for relative file paths
+library(scales)     # for easy conversion of decimal to % in plots
 ```
 
-read jacob's excel
+### 2) Read Data
+The data was given to me by [Jacob Stephens](https://jacobcstephens.com/about/). He collected from ... . 
+The spreadsheet can be [downloaded from his sharepoint.](https://gordonedu-my.sharepoint.com/:x:/g/personal/jacob_stephens_gordon_edu/EVx2b0Dwb3JJtNbFIklmS-gB_ZZAI9ei7jH0Bdvb6yWAEQ?e=eWGy8Y) *Unfortunately, it can't be read from a url due to the way sharepoint hosts files)*.
+
 ```{r}
 # Load the data!
 data <- read_xlsx(here("data_input/president-bond-stock-change-correlation.xlsx"),
   skip = 4
 ) %>%
+  
+  # excel saves spaces stupidly, so need this weird dot 
+  #  (don't ask how long i spent figuring this out)
   rename(
-    stock_return = `S&P 500 Index `, # excel saves spaces stupidly.
+    stock_return = `S&P 500 Index `, 
     year = ` Year`,
     bond_return = `100% Bonds `
   )
 ```
 
+
+### 3) Plots!
+This whole chunk is really one call. I use `pmap`, but since I only have two lists, could have gotten away with `map2`. I found this easier for maintaining a clean workspace, and the code is not so lengthy or computationally heavy that any time is lost. 
 ```{r}
 # Plot!
 pmap(
+  
+  # list the things I want to loop over
   .l = list(
     cols_to_plot <- c("stock_return", "bond_return"),
     names_to_plot <- c("Stock", "Bond")
   ), 
+  
+  # and loop over them! 
   .f = function(cols_to_plot, names_to_plot) {
 
-    # parameter set up:
+    ## parameter set up:
+    
+    # official colors of Repub and Dem parties
     political_colors <- c("#0015BC", "#DE0100")
+    
+    # clean up the ggplot code later on by naming them now
     plot_title <- paste0("Annual ", names_to_plot, " Returns")
+    
+   ifelse(names_to_plot == "stock_return", data_source <- "S&P 500 returns", data_source <- "bond returns (mix of U.S. Treasury bond durations and TIPS)")
+
     plot_caption <- paste0(
-      "Data are annual SP500 & Treasury Bonds returns from ",
+      "Data are annual ",
+      data_source,
+      " from ",
       min(data$year),
       " to ",
       max(data$year)
@@ -54,13 +89,16 @@ pmap(
       select(-Party) %>%
       identity()
 
-    # Plot #1: Boxplot
+    ### Plot #1: Boxplot
     data %>%
       ggplot(aes(x = Party, y = get(cols_to_plot))) +
       geom_boxplot(aes(fill = Party), width = 0.35) +
       geom_jitter(width = 0.05) +
       scale_fill_manual(values = political_colors) +
-      scale_y_continuous(labels = percent_format(accuracy = 2)) +
+      scale_y_continuous(
+        labels = percent_format(accuracy = 2),
+        limits = c(-0.4, 0.4) # to match density plot and fix axis
+      ) +    
       theme_minimal() +
       labs(
         title = plot_title,
@@ -73,8 +111,8 @@ pmap(
       ggsave(filename = here(paste0("plots/box_", names_to_plot, ".png")))
 
 
-    # Plot #2: Density plot
-    #  (2 = Repub, 1 = Dem)
+    ### Plot #2: Density plot
+    #    (2 = Repub, 1 = Dem)
     data %>%
       ggplot() +
       geom_density(aes(y = get(cols_to_plot), fill = Party), alpha = 0.75) +
@@ -87,12 +125,14 @@ pmap(
       theme(
         legend.position = "top",
         legend.title = element_blank(),
-        axis.title = element_blank()
+        axis.title = element_blank(),
+        axis.text.y = element_blank()
       ) +
       scale_y_continuous(
         labels = percent_format(accuracy = 2),
         # goes in ylim because of flipped coordinates.
-        limits = c(-0.4, 0.4)
+        limits = c(-0.4, 0.4),
+        expand = expansion(mult=0)
       ) +
       labs(
         title = plot_title,
