@@ -113,6 +113,8 @@ pmap(
 
     ### Plot #2: Density plot
     #    (2 = Repub, 1 = Dem)
+    # This plot is somewhate misleading. There are only ~25 obs for
+    #  each series, but the plot is basically a smooth histogram.
     data %>%
       ggplot() +
       geom_density(aes(y = get(cols_to_plot), fill = Party), alpha = 0.75) +
@@ -131,7 +133,7 @@ pmap(
       scale_y_continuous(
         labels = percent_format(accuracy = 2),
         # goes in ylim because of flipped coordinates.
-        limits = c(-0.4, 0.4),
+        limits = c(-0.55, 0.55),
         expand = expansion(mult=0)
       ) +
       labs(
