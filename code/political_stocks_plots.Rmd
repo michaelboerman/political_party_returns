@@ -1,0 +1,105 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r, message = FALSE, warning = FALSE}
+library(readxl)
+library(tidyverse)
+library(here)
+library(scales)
+```
+
+read jacob's excel
+```{r}
+# Load the data!
+data <- read_xlsx(here("data_input/president-bond-stock-change-correlation.xlsx"),
+  skip = 4
+) %>%
+  rename(
+    stock_return = `S&P 500 Index `, # excel saves spaces stupidly.
+    year = ` Year`,
+    bond_return = `100% Bonds `
+  )
+```
+
+```{r}
+# Plot!
+pmap(
+  .l = list(
+    cols_to_plot <- c("stock_return", "bond_return"),
+    names_to_plot <- c("Stock", "Bond")
+  ), 
+  .f = function(cols_to_plot, names_to_plot) {
+
+    # parameter set up:
+    political_colors <- c("#0015BC", "#DE0100")
+    plot_title <- paste0("Annual ", names_to_plot, " Returns")
+    plot_caption <- paste0(
+      "Data are annual SP500 & Treasury Bonds returns from ",
+      min(data$year),
+      " to ",
+      max(data$year)
+    )
+
+    # grab the means for each party for each asset class
+    party_means <- data %>%
+      select(Party, stock_return, bond_return) %>%
+      group_by(Party) %>%
+      summarize(
+        stock_return = mean(stock_return),
+        bond_return = mean(bond_return),
+        .groups = "drop"
+      ) %>%
+      select(-Party) %>%
+      identity()
+
+    # Plot #1: Boxplot
+    data %>%
+      ggplot(aes(x = Party, y = get(cols_to_plot))) +
+      geom_boxplot(aes(fill = Party), width = 0.35) +
+      geom_jitter(width = 0.05) +
+      scale_fill_manual(values = political_colors) +
+      scale_y_continuous(labels = percent_format(accuracy = 2)) +
+      theme_minimal() +
+      labs(
+        title = plot_title,
+        caption = plot_caption
+      ) +
+      theme(
+        legend.position = "none",
+        axis.title = element_blank()
+      ) +
+      ggsave(filename = here(paste0("plots/box_", names_to_plot, ".png")))
+
+
+    # Plot #2: Density plot
+    #  (2 = Repub, 1 = Dem)
+    data %>%
+      ggplot() +
+      geom_density(aes(y = get(cols_to_plot), fill = Party), alpha = 0.75) +
+      scale_fill_manual(values = political_colors) +
+      coord_flip() +
+      geom_hline(yintercept = mean(data$stock_return)) +
+      geom_hline(yintercept = pull(party_means[1, cols_to_plot]), color = political_colors[1]) +
+      geom_hline(yintercept = pull(party_means[2, cols_to_plot]), color = political_colors[2]) +
+      theme_minimal() +
+      theme(
+        legend.position = "top",
+        legend.title = element_blank(),
+        axis.title = element_blank()
+      ) +
+      scale_y_continuous(
+        labels = percent_format(accuracy = 2),
+        # goes in ylim because of flipped coordinates.
+        limits = c(-0.4, 0.4)
+      ) +
+      labs(
+        title = plot_title,
+        subtitle = "Vertical Bars are means",
+        caption = plot_caption
+      ) +
+      ggsave(filename = here(paste0("plots/density_", names_to_plot, ".png")))
+  }
+)
+```
