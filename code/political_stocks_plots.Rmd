@@ -120,7 +120,7 @@ pmap(
       geom_density(aes(y = get(cols_to_plot), fill = Party), alpha = 0.75) +
       scale_fill_manual(values = political_colors) +
       coord_flip() +
-      geom_hline(yintercept = mean(data$stock_return)) +
+      geom_hline(yintercept = mean(pull(data[, cols_to_plot]))) +
       geom_hline(yintercept = pull(party_means[1, cols_to_plot]), color = political_colors[1]) +
       geom_hline(yintercept = pull(party_means[2, cols_to_plot]), color = political_colors[2]) +
       theme_minimal() +
