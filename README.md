@@ -1,6 +1,10 @@
 # political_party_returns
- Simple plots showing returns for stocks and bonds for each presidential party over 50 years. Data and discussion from [Jacob Stephens](https://jacobcstephens.com/about/). 
+ Simple plots showing returns for stocks and bonds for each presidential party over 50 years.
  
- ![](plots/bond.png)
- ![](plots/stock.png)
+ Just a pet project to showcase my code. For an extensive project, including data collection, prep, statistical analysis, and complex plotting, see my [COVID Lockdown Severity Index!](https://github.com/michaelboerman/lockdown_severity_index#readme)
+ 
+ Data and discussion from [Jacob Stephens](https://jacobcstephens.com/about/). 
+ 
+ ![](plots/asset_returns.png)
+
 
