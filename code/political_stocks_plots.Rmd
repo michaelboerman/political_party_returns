@@ -21,6 +21,7 @@ library(readxl)     # for reading the ecxel file
 library(tidyverse)  # all inclusive
 library(here)       # for relative file paths
 library(scales)     # for easy conversion of decimal to % in plots
+library(patchwork)  # for arranging plots onto one layout.
 ```
 
 ### 2) Read Data
@@ -137,42 +138,9 @@ pmap(
         legend.position = "none",
         axis.title = element_blank()
       ) +
-      ggsave(filename = here(paste0("plots/box_", names_to_plot, ".png")))
-
-
-    ### Plot #2: Density plot
-    #    (2 = Repub, 1 = Dem)
-    # This plot is somewhate misleading. There are only ~25 obs for
-    #  each series, but the plot is basically a smooth histogram.
-    
-    # I think I may deprecate this plot in lieu of the violin plot above. 
-    data %>%
-      ggplot() +
-      geom_density(aes(y = get(cols_to_plot), fill = party), alpha = 0.75) +
-      scale_fill_manual(values = political_colors) +
+      geom_hline(yintercept = 0)+
       coord_flip() +
-      geom_hline(yintercept = mean(pull(data[, cols_to_plot]))) +
-      geom_hline(yintercept = pull(party_means[1, cols_to_plot]), color = political_colors[1]) +
-      geom_hline(yintercept = pull(party_means[2, cols_to_plot]), color = political_colors[2]) +
-      theme_minimal() +
-      theme(
-        legend.position = "top",
-        legend.title = element_blank(),
-        axis.title = element_blank(),
-        axis.text.y = element_blank()
-      ) +
-      scale_y_continuous(
-        labels = percent_format(accuracy = 2),
-        # goes in ylim because of flipped coordinates.
-        limits = c(-0.55, 0.55),
-        expand = expansion(mult=0)
-      ) +
-      labs(
-        title = plot_title,
-        subtitle = "Vertical Bars are means",
-        caption = plot_caption
-      ) +
-      ggsave(filename = here(paste0("plots/density_", names_to_plot, ".png")))
+      ggsave(filename = here(paste0("plots/", tolower(names_to_plot), ".png")))
   }
 )
 ```
