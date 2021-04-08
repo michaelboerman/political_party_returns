@@ -25,6 +25,7 @@ library(readxl)     # for reading the ecxel file
 library(tidyverse)  # all inclusive
 library(here)       # for relative file paths
 library(scales)     # for easy conversion of decimal to % in plots
+library(ggtext)     # for spicing up the text with color.
 library(png)        # to read in the Github logo
 library(grid)       # to render  the Github logo
 
@@ -101,8 +102,12 @@ map(
     ## ---  parameter set up: --- ##
 
     # clean up the ggplot code later on by naming them now
-   plot_title <- "Annual Returns by Political Party and Asset Class"
+    plot_title <- "Which party throws the best market party?"
     
+    plot_subtitle <- 
+    "Annual market return under <strong><span style='color:#DE0100'>Repbulican presidents</span></strong> varies widely, \n while the returns under <strong><span style ='color:#0015BC'>Democratic presidents</span></strong> have fewer negative years."
+   
+
    data_source <- "S&P 500 & Bond returns (mix of U.S. Treasury bond durations and TIPS)"
 
    plot_caption <- paste0(
@@ -153,15 +158,18 @@ map(
       scale_y_continuous(
         labels = percent_format(accuracy = 2),
       ) +    
-      scale_x_discrete(labels = c("Stocks", "Bonds")) +
+      scale_x_discrete(labels = c("Bonds", "Stocks")) +
       theme_minimal() +
       labs(
-        title   = plot_title,
-        caption = plot_caption
+        title    = plot_title,
+        subtitle = plot_subtitle,
+        caption  = plot_caption
       ) +
       theme(
         legend.position = "none",
         axis.title      = element_blank(),
+        plot.subtitle   = element_markdown(size = 12),
+        plot.title      = element_text(size = 18),
         text = element_text(
           family = "Times New Roman",
           size = 16
@@ -179,13 +187,14 @@ map(
       annotate(
         "text", 
         x = 1.2, y = -.25, 
-        size = 9,
+        size = 10,
         label = "/michaelboerman",
-        family = "Times New Roman"
+        family = "Courier New"
       ) +
       
       geom_hline(yintercept = 0)+
-      ggsave(filename = here("plots/asset_returns.png"))
+      ggsave(filename = here("plots/asset_returns.png"), 
+             width = 10, height = 6)
   }
 )
 ```
