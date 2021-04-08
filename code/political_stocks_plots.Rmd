@@ -1,5 +1,5 @@
 ---
-title: "Returns for Stocks and Bonds under each Residential Party"
+title: "Returns for Stocks and Bonds under each Residential party"
 output: html_notebook
 ---
 
@@ -29,17 +29,26 @@ The spreadsheet can be [downloaded from his sharepoint.](https://gordonedu-my.sh
 
 ```{r}
 # Load the data!
-data <- read_xlsx(here("data_input/president-bond-stock-change-correlation.xlsx"),
-  skip = 4
-) %>%
-  
-  # excel saves spaces stupidly, so need this weird dot 
+data <-
+  read_xlsx(here("data_input/president-bond-stock-change-correlation.xlsx"),
+    skip = 4
+  ) %>%
+
+  # excel saves spaces stupidly, so need this weird dot/space
   #  (don't ask how long i spent figuring this out)
   rename(
-    stock_return = `S&P 500 Index `, 
-    year = ` Year`,
-    bond_return = `100% Bonds `
-  )
+    stock_return = `S&P 500 Index `,
+    year         = ` Year`,
+    bond_return  = `100% Bonds `,
+    party        = Party
+  ) %>% 
+  
+  # insert a color for use in plotting later. Ignore case.
+  # official colors of Repub and Dem parties
+  mutate(political_colors = case_when(
+    str_detect(party, "emocrat") ~ "#0015BC",
+    str_detect(party, "epublic") ~ "#DE0100"
+  ))
 ```
 
 
@@ -47,26 +56,32 @@ data <- read_xlsx(here("data_input/president-bond-stock-change-correlation.xlsx"
 This whole chunk is really one call. I use `pmap`, but since I only have two lists, could have gotten away with `map2`. I found this easier for maintaining a clean workspace, and the code is not so lengthy or computationally heavy that any time is lost. 
 ```{r}
 # Plot!
+
+
+# list the things I want to loop over
+list(
+    cols  = c("stock_return", "bond_return"),
+    names = c("Stock", "Bond")
+) %>% 
+
 pmap(
   
-  # list the things I want to loop over
-  .l = list(
-    cols_to_plot <- c("stock_return", "bond_return"),
-    names_to_plot <- c("Stock", "Bond")
-  ), 
-  
   # and loop over them! 
-  .f = function(cols_to_plot, names_to_plot) {
+  function(cols_to_plot, names_to_plot) {
 
-    ## parameter set up:
+    ## ---  parameter set up: --- ##
     
     # official colors of Repub and Dem parties
-    political_colors <- c("#0015BC", "#DE0100")
-    
+    # political_colors <- c("#0015BC", "#DE0100")
+
     # clean up the ggplot code later on by naming them now
-    plot_title <- paste0("Annual ", names_to_plot, " Returns")
+  plot_title <- paste0("Annual ", names_to_plot, " Returns")
     
-   ifelse(names_to_plot == "stock_return", data_source <- "S&P 500 returns", data_source <- "bond returns (mix of U.S. Treasury bond durations and TIPS)")
+   data_source <- ifelse(
+     names_to_plot == "Stock", 
+     "S&P 500 returns", 
+     "Bond returns (mix of U.S. Treasury bond durations and TIPS)"
+   )
 
     plot_caption <- paste0(
       "Data are annual ",
@@ -76,25 +91,39 @@ pmap(
       " to ",
       max(data$year)
     )
+    
+    ## --- Means --- ##
 
     # grab the means for each party for each asset class
     party_means <- data %>%
-      select(Party, stock_return, bond_return) %>%
-      group_by(Party) %>%
+      select(party, stock_return, bond_return) %>%
+      group_by(party) %>%
       summarize(
         stock_return = mean(stock_return),
         bond_return = mean(bond_return),
         .groups = "drop"
       ) %>%
-      select(-Party) %>%
+      select(-party) %>%
       identity()
+    
+    ## --- Plots! --- ##
 
     ### Plot #1: Boxplot
     data %>%
-      ggplot(aes(x = Party, y = get(cols_to_plot))) +
-      geom_boxplot(aes(fill = Party), width = 0.35) +
-      geom_jitter(width = 0.05) +
-      scale_fill_manual(values = political_colors) +
+      ggplot(aes(x = party, y = get(cols_to_plot), color = political_colors)) +
+      scale_color_manual(values = political_colors) +
+      geom_violin(
+        alpha = 0.5,
+        size  = 1,
+      ) +
+      ggbeeswarm::geom_quasirandom(
+        # shape       = 1,
+        size        = 3,
+        width       = 0.34,
+        dodge.width = .75, 
+        alpha       = .75,
+        show.legend = F
+      ) +
       scale_y_continuous(
         labels = percent_format(accuracy = 2),
         limits = c(-0.4, 0.4) # to match density plot and fix axis
@@ -115,9 +144,11 @@ pmap(
     #    (2 = Repub, 1 = Dem)
     # This plot is somewhate misleading. There are only ~25 obs for
     #  each series, but the plot is basically a smooth histogram.
+    
+    # I think I may deprecate this plot in lieu of the violin plot above. 
     data %>%
       ggplot() +
-      geom_density(aes(y = get(cols_to_plot), fill = Party), alpha = 0.75) +
+      geom_density(aes(y = get(cols_to_plot), fill = party), alpha = 0.75) +
       scale_fill_manual(values = political_colors) +
       coord_flip() +
       geom_hline(yintercept = mean(pull(data[, cols_to_plot]))) +
