@@ -1,0 +1,54 @@
+---
+title: "Vector Autoregressive Analysis"
+author: "Michael Boerman"
+date: "4/8/2021"
+output: html_document
+---
+
+In this second analysis, I'd like to take a look at the time-delayed impact of presidential political party on stock and bond returns.
+
+To do this, I'll use vector autoregressions. While simple regressions assume uni-directional influence, VARs treat all variables endogenously. This allows us to test Granger causality, too, which specifies if one variable is useful in forecasting another. For a fuller discussion, see the legendary[Rob Hyndman's slides](https://robjhyndman.com/eindhoven/3-4-Advanced.pdf).
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(stringr)
+
+library(fpp)
+library(vars)
+library(here)
+```
+
+Import the cleaned data from the first analysis, `political_stocks_plots.Rmd`:
+
+```{r}
+data <- read_csv(here("results/csv/cleaned_data.csv")) %>% 
+  pivot_wider(
+    id_cols = c(year, party), 
+    names_from = asset, 
+    values_from = return
+)
+```
+
+Great! Now, some rudimental var:
+
+```{r}
+data_ts <- ts(data = cbind(data$bonds, data$stocks, data$party), start = min(data$year), end = max(data$year), frequency = 1, names = c("stock_return", "bond_return", "party"))
+
+ar(data_ts, order=3)
+
+VARselect(data_ts, lag.max = 4, type = "const")
+
+var <- VAR(data_ts, p=5, type="both")
+summary(var)
+
+plot(forecast(var), xlab = "Year")
+
+```
+
+Granger test:
+
+```{r}
+grangertest(data$year, data$stocks, order = 10)
+```

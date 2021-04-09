@@ -32,7 +32,7 @@ library(grid)       # to render  the Github logo
 # font setup
 # tnr or die!
 library(extrafont)
-font_import()
+# font_import()
 loadfonts(device="win") 
 
 ```
@@ -68,7 +68,7 @@ data <-
   )) %>% 
   
   # Next, some data manipulation. Select just a few columns...
-  select(party, year, bonds, stocks, political_colors) %>% 
+  dplyr::select(party, year, bonds, stocks, political_colors) %>% 
   
   # and turn these into "long" data instead of wide.
   # this is needed for proper plotting!
@@ -77,6 +77,8 @@ data <-
     names_to = "asset", 
     values_to = "return"
   )
+
+write_csv(data, here("results/csv/cleaned_data.csv"))
 ```
 
 A quick aside: I'd like to use the Github logo in the chart, but am not a fontawesome pro member. Thus, I downloaded the png and will import it:
@@ -186,14 +188,14 @@ map(
       ) +
       annotate(
         "text", 
-        x = 1.2, y = -.25, 
+        x = 1.10, y = -.25, 
         size = 10,
         label = "/michaelboerman",
         family = "Courier New"
       ) +
       
       geom_hline(yintercept = 0)+
-      ggsave(filename = here("plots/asset_returns.png"), 
+      ggsave(filename = here("results/plots/asset_returns.png"), 
              width = 10, height = 6)
   }
 )

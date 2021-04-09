@@ -5,6 +5,6 @@
  
  Data and discussion from [Jacob Stephens](https://jacobcstephens.com/about/). 
  
- ![](plots/asset_returns.png)
+ ![](results/plots/asset_returns.png)
 
 
