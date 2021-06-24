@@ -1,9 +1,9 @@
 ---
-title: "Returns for Stocks and Bonds under each Residential party"
+title: "Returns for Stocks and Bonds under each Presidential Party"
 output: html_notebook
 ---
 
-This is a simple code for showing how stocks and bonds do when the presidential party is Democratic or Republican. More so, it's a *very* simple showcase of my tidyverse toolbox!
+This is a simple code for showing how stocks and bonds do when the presidential party is Democratic or Republican. This is less about analysis (arrow of causation, anyone?) and more of a *very* simple showcase of my tidyverse toolbox!
 
 This code is 3 chunks:
 
@@ -20,20 +20,25 @@ Please recall that correlation != causation :). I am not registered or associate
 ### 1) Libraries
 
 ```{r, message = FALSE, warning = FALSE}
+
 # The usuals!
-library(readxl)     # for reading the ecxel file
+library(readxl)     # for reading the excel file
 library(tidyverse)  # all inclusive
 library(here)       # for relative file paths
 library(scales)     # for easy conversion of decimal to % in plots
 library(ggtext)     # for spicing up the text with color.
 library(png)        # to read in the Github logo
 library(grid)       # to render  the Github logo
+library(extrafont)  # for special fonts
 
-# font setup
-# tnr or die!
-library(extrafont)
+# --- font setup --- #
+# run this *once*; it takes awhile! then comment-out.
 # font_import()
 loadfonts(device="win") 
+
+# prevent intermediate messages/outputs from showing up
+# after each chunk:
+knitr::opts_chunk$set(message = FALSE)
 
 ```
 
@@ -73,11 +78,12 @@ data <-
   # and turn these into "long" data instead of wide.
   # this is needed for proper plotting!
   pivot_longer(
-    c(bonds, stocks), 
+    cols = c(bonds, stocks), 
     names_to = "asset", 
     values_to = "return"
   )
 
+# write the intermediate output.
 write_csv(data, here("results/csv/cleaned_data.csv"))
 ```
 
@@ -91,15 +97,10 @@ github_logo <- readPNG(here("data_input/github_logo.png")) %>%
 
 ### 3) Plots!
 
-This whole chunk is really one call. I had been using pmap with several inputs, but using `pivot_longer` above eliminated this need. I still use map to loop over stocks and bonds, which ensures that all are on one plot.
+I had been using pmap with several inputs, but using `pivot_longer` above eliminated this need.
 
-```{r}
-# Iterate over each asset class. 
-c("stocks", "bonds") %>% 
-map(
-  
-  # and loop over them! 
-  function(asset) {
+```{r, fig.show="hide",  results="hide", fig.keep = "none"}
+
     political_colors <- unique(data$political_colors)
     ## ---  parameter set up: --- ##
 
@@ -113,13 +114,8 @@ map(
    data_source <- "S&P 500 & Bond returns (mix of U.S. Treasury bond durations and TIPS)"
 
    plot_caption <- paste0(
-     "Data are annual ",
-     data_source,
-     ", from ",
-     min(data$year),
-     " to ",
-     max(data$year),
-     "."
+     "Data are annual ", data_source, ", from ",
+     min(data$year), " to ", max(data$year), "."
    )
   
     
@@ -148,13 +144,12 @@ map(
         size  = 1,
         # dodge.width = 0.75
       ) +
-      # scale_fill_manual(values = political_colors) +
       ggbeeswarm::geom_quasirandom(
         # shape       = 1,
         size        = 3,
         width       = 0.15,
-        dodge.width = .85,
-        alpha       = .75,
+        dodge.width = 0.85,
+        alpha       = 0.75,
         show.legend = F
       ) +
       scale_y_continuous(
@@ -197,6 +192,6 @@ map(
       geom_hline(yintercept = 0)+
       ggsave(filename = here("results/plots/asset_returns.png"), 
              width = 10, height = 6)
-  }
-)
+
+
 ```
