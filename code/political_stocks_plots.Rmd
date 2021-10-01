@@ -1,5 +1,6 @@
 ---
 title: "Returns for Stocks and Bonds under each Presidential Party"
+author: "Michael Boerman"
 output: html_notebook
 ---
 
@@ -188,9 +189,9 @@ I had been using pmap with several inputs, but using `pivot_longer` above elimin
         label = "/michaelboerman",
         family = "Courier New"
       ) +
+      geom_hline(yintercept = 0) 
       
-      geom_hline(yintercept = 0)+
-      ggsave(filename = here("results/plots/asset_returns.png"), 
+    ggsave(filename = here("results/plots/asset_returns.png"), 
              width = 10, height = 6)
 
 
